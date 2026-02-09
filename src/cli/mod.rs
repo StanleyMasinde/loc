@@ -183,6 +183,7 @@ impl fmt::Display for FileType {
 struct FileCount {
     total_files: u32,
     total_loc: u32,
+    blank_lines: u32,
 }
 
 fn count_lines(path: &Path) -> Result<(), LocError> {
@@ -268,16 +269,24 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
         };
 
         if let Result::Ok(text) = fs::read_to_string(&file) {
+            let mut blank_lines = 0;
+            for line in text.lines() {
+                if line.is_empty() {
+                    blank_lines += 1;
+                }
+            }
             let line_count = text.lines().count() as u32;
             counter
                 .entry(file_type)
                 .and_modify(|e| {
                     e.total_loc += line_count;
-                    e.total_files += 1
+                    e.total_files += 1;
+                    e.blank_lines += blank_lines
                 })
                 .or_insert(FileCount {
                     total_files: 1,
                     total_loc: line_count,
+                    blank_lines: blank_lines,
                 });
         }
     }
