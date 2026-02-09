@@ -191,19 +191,18 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
     let mut counter: HashMap<FileType, FileCount> = HashMap::new();
     let mut files: Vec<PathBuf> = vec![];
     for result in Walk::new(path) {
-        let entry = result.map_err(|source| LocError::WalkDirectory {
-            path: path.to_path_buf(),
-            source,
-        })?;
-        let entry_path = entry.into_path();
+        if let Result::Ok(entry) = result {
+            let entry_path = entry.into_path();
 
-        if entry_path.is_file() {
-            files.push(entry_path);
+            if entry_path.is_file() {
+                files.push(entry_path);
+            }
         }
+        // Probably show a warning here?
     }
 
     for file in files {
-        let file_name = file.file_name().unwrap();
+        let file_name = file.file_name().unwrap_or_default();
         let file_name_normalized = file_name.to_string_lossy().to_ascii_lowercase();
         let mut file_type = FileType::Other;
         if file_name_normalized == "dockerfile" {
