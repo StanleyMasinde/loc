@@ -179,8 +179,14 @@ impl fmt::Display for FileType {
     }
 }
 
+#[derive(Debug)]
+struct FileCount {
+    total_files: u32,
+    total_loc: u32,
+}
+
 fn count_lines(path: &Path) -> Result<(), LocError> {
-    let mut counter: HashMap<FileType, u32> = HashMap::new();
+    let mut counter: HashMap<FileType, FileCount> = HashMap::new();
     let mut files: Vec<PathBuf> = vec![];
     for result in Walk::new(path) {
         let entry = result.map_err(|source| LocError::WalkDirectory {
@@ -265,8 +271,14 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
             let line_count = text.lines().count() as u32;
             counter
                 .entry(file_type)
-                .and_modify(|e| *e += line_count)
-                .or_insert(line_count);
+                .and_modify(|e| {
+                    e.total_loc += line_count;
+                    e.total_files += 1
+                })
+                .or_insert(FileCount {
+                    total_files: 1,
+                    total_loc: line_count,
+                });
         }
     }
 
