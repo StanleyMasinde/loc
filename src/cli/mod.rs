@@ -292,16 +292,38 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
     }
 
     let mut table = Table::new();
-    table.add_row(row!["Language", "Files", "Blank lines", "All lines"]);
+    table.add_row(row![
+        "Language",
+        "Files",
+        "Blank lines",
+        "code",
+        "All lines"
+    ]);
+
+    let mut total_files = 0;
+    let mut total_blank = 0;
+    let mut total_code = 0;
 
     for (file_type, file_count) in counter {
-        table.add_row(row![
-            format!("{file_type}"),
-            format!("{}", file_count.total_files),
-            format!("{}", file_count.blank_lines),
-            format!("{}", file_count.total_loc)
-        ]);
+        let total = file_count.total_files;
+        let blank = file_count.blank_lines;
+        let loc = file_count.total_loc;
+        let code = loc - blank;
+
+        total_files += total;
+        total_blank += blank;
+        total_code += code;
+
+        table.add_row(row![file_type, total, blank, code, loc]);
     }
+
+    table.add_row(row![
+        "Total",
+        total_files,
+        total_blank,
+        total_code,
+        total_files + total_blank + total_code
+    ]);
 
     table.printstd();
 
