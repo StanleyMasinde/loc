@@ -58,9 +58,17 @@ pub enum LocError {
 enum FileType {
     HTML,
     CSS,
+    SASS,
+    LESS,
+    STYLUS,
+    PCSS,
     JS,
     TS,
+    JSX,
+    TSX,
     Vue,
+    SVELTE,
+    ASTRO,
     RS,
     PY,
     JAVA,
@@ -96,6 +104,13 @@ enum FileType {
     PS1,
     SQL,
     TOML,
+    JSON,
+    YAML,
+    XML,
+    MD,
+    MDX,
+    DOCKERFILE,
+    MAKEFILE,
     Other,
 }
 
@@ -104,8 +119,14 @@ impl fmt::Display for FileType {
         let text = match self {
             FileType::HTML => "HTML",
             FileType::CSS => "CSS",
+            FileType::SASS => "Sass",
+            FileType::LESS => "Less",
+            FileType::STYLUS => "Stylus",
+            FileType::PCSS => "PostCSS",
             FileType::JS => "JavasScript",
             FileType::TS => "TypeScript",
+            FileType::JSX => "JSX",
+            FileType::TSX => "TSX",
             FileType::RS => "Rust",
             FileType::PY => "Python",
             FileType::JAVA => "Java",
@@ -141,7 +162,16 @@ impl fmt::Display for FileType {
             FileType::PS1 => "PowerShell",
             FileType::SQL => "SQL",
             FileType::TOML => "Toml",
+            FileType::JSON => "JSON",
+            FileType::YAML => "YAML",
+            FileType::XML => "XML",
+            FileType::MD => "Markdown",
+            FileType::MDX => "MDX",
+            FileType::DOCKERFILE => "Dockerfile",
+            FileType::MAKEFILE => "Makefile",
             FileType::Vue => "VueJS",
+            FileType::SVELTE => "Svelte",
+            FileType::ASTRO => "Astro",
             FileType::Other => "Other",
         };
 
@@ -166,20 +196,27 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
 
     for file in files {
         let file_name = file.file_name().unwrap();
+        let file_name_normalized = file_name.to_string_lossy().to_ascii_lowercase();
         let mut file_type = FileType::Other;
-        if let Some(file_extension) = file_name
-            .display()
-            .to_string()
-            .rsplit(".")
-            .collect::<Vec<&str>>()
-            .first()
-        {
-            file_type = match *file_extension {
+        if file_name_normalized == "dockerfile" {
+            file_type = FileType::DOCKERFILE;
+        } else if file_name_normalized == "makefile" {
+            file_type = FileType::MAKEFILE;
+        } else if let Some(file_extension) = file_name_normalized.rsplit('.').next() {
+            file_type = match file_extension {
                 "html" | "xhtml" => FileType::HTML,
                 "ts" => FileType::TS,
                 "js" => FileType::JS,
+                "tsx" => FileType::TSX,
+                "jsx" => FileType::JSX,
                 "vue" => FileType::Vue,
+                "svelte" => FileType::SVELTE,
+                "astro" => FileType::ASTRO,
                 "css" => FileType::CSS,
+                "sass" | "scss" => FileType::SASS,
+                "less" => FileType::LESS,
+                "styl" | "stylus" => FileType::STYLUS,
+                "pcss" => FileType::PCSS,
                 "rs" => FileType::RS,
                 "py" => FileType::PY,
                 "java" => FileType::JAVA,
@@ -215,6 +252,11 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
                 "ps1" => FileType::PS1,
                 "sql" => FileType::SQL,
                 "toml" => FileType::TOML,
+                "json" => FileType::JSON,
+                "yaml" | "yml" => FileType::YAML,
+                "xml" => FileType::XML,
+                "md" => FileType::MD,
+                "mdx" => FileType::MDX,
                 _ => FileType::Other,
             }
         };
