@@ -6,6 +6,7 @@ use std::{
 
 use clap::{Parser, Subcommand};
 use ignore::Walk;
+use prettytable::{Table, row};
 use thiserror::Error;
 
 #[derive(Parser)]
@@ -291,7 +292,19 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
         }
     }
 
-    println!("{:?}", counter);
+    let mut table = Table::new();
+    table.add_row(row!["Language", "Files", "Blank lines", "All lines"]);
+
+    for (file_type, file_count) in counter {
+        table.add_row(row![
+            format!("{file_type}"),
+            format!("{}", file_count.total_files),
+            format!("{}", file_count.blank_lines),
+            format!("{}", file_count.total_loc)
+        ]);
+    }
+
+    table.printstd();
 
     Ok(())
 }
