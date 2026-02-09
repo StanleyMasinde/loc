@@ -219,15 +219,13 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
             }
         };
 
-        let text = fs::read_to_string(&file).map_err(|source| LocError::ReadFile {
-            path: file.clone(),
-            source,
-        })?;
-        let line_count = text.lines().count() as u32;
-        counter
-            .entry(file_type)
-            .and_modify(|e| *e += line_count)
-            .or_insert(line_count);
+        if let Result::Ok(text) = fs::read_to_string(&file) {
+            let line_count = text.lines().count() as u32;
+            counter
+                .entry(file_type)
+                .and_modify(|e| *e += line_count)
+                .or_insert(line_count);
+        }
     }
 
     println!("{:?}", counter);
