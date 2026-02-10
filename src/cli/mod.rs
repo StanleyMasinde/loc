@@ -1,27 +1,14 @@
+use clap::Parser;
 use std::{
     collections::HashMap,
-    env, fmt, fs,
+    env, fs,
     path::{Path, PathBuf},
 };
 
-use clap::{Parser, Subcommand};
 use ignore::Walk;
 use prettytable::{Table, row};
-use thiserror::Error;
 
-#[derive(Parser)]
-#[command(version, about)]
-struct Cli {
-    /// Specify the directory
-    #[arg(short, long)]
-    dir: Option<String>,
-
-    #[command(subcommand)]
-    command: Option<Commands>,
-}
-
-#[derive(Clone, Subcommand)]
-enum Commands {}
+use crate::types::{cli::Cli, error::LocError, file_count::FileCount, file_type::FileType};
 
 pub fn run() -> Result<(), LocError> {
     let cli = Cli::parse();
@@ -34,158 +21,6 @@ pub fn run() -> Result<(), LocError> {
     count_lines(&path)
 }
 
-#[derive(Error, Debug)]
-pub enum LocError {
-    #[error("failed to determine current working directory")]
-    CurrentDirectory {
-        #[source]
-        source: std::io::Error,
-    },
-    #[error("failed while traversing directory `{path}`")]
-    WalkDirectory {
-        path: PathBuf,
-        #[source]
-        source: ignore::Error,
-    },
-    #[error("failed to read `{path}`")]
-    ReadFile {
-        path: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
-}
-
-#[derive(Debug, Eq, Hash, PartialEq)]
-enum FileType {
-    HTML,
-    CSS,
-    SASS,
-    LESS,
-    STYLUS,
-    PCSS,
-    JS,
-    TS,
-    JSX,
-    TSX,
-    Vue,
-    SVELTE,
-    ASTRO,
-    RS,
-    PY,
-    JAVA,
-    C,
-    H,
-    CPP,
-    HPP,
-    CSHARP,
-    GO,
-    RB,
-    PHP,
-    SWIFT,
-    KT,
-    SCALA,
-    LUA,
-    R,
-    DART,
-    ELIXIR,
-    ERLANG,
-    HS,
-    ML,
-    MLI,
-    FS,
-    FSI,
-    FSSCRIPT,
-    CLJ,
-    GROOVY,
-    PL,
-    PM,
-    SH,
-    BASH,
-    ZSH,
-    PS1,
-    SQL,
-    TOML,
-    JSON,
-    YAML,
-    XML,
-    MD,
-    MDX,
-    DOCKERFILE,
-    MAKEFILE,
-    Other,
-}
-
-impl fmt::Display for FileType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let text = match self {
-            FileType::HTML => "HTML",
-            FileType::CSS => "CSS",
-            FileType::SASS => "Sass",
-            FileType::LESS => "Less",
-            FileType::STYLUS => "Stylus",
-            FileType::PCSS => "PostCSS",
-            FileType::JS => "JavasScript",
-            FileType::TS => "TypeScript",
-            FileType::JSX => "JSX",
-            FileType::TSX => "TSX",
-            FileType::RS => "Rust",
-            FileType::PY => "Python",
-            FileType::JAVA => "Java",
-            FileType::C => "C",
-            FileType::H => "C/C++ Header",
-            FileType::CPP => "C++",
-            FileType::HPP => "C++ Header",
-            FileType::CSHARP => "C#",
-            FileType::GO => "Go",
-            FileType::RB => "Ruby",
-            FileType::PHP => "PHP",
-            FileType::SWIFT => "Swift",
-            FileType::KT => "Kotlin",
-            FileType::SCALA => "Scala",
-            FileType::LUA => "Lua",
-            FileType::R => "R",
-            FileType::DART => "Dart",
-            FileType::ELIXIR => "Elixir",
-            FileType::ERLANG => "Erlang",
-            FileType::HS => "Haskell",
-            FileType::ML => "OCaml",
-            FileType::MLI => "OCaml Interface",
-            FileType::FS => "F#",
-            FileType::FSI => "F# Interface",
-            FileType::FSSCRIPT => "F# Script",
-            FileType::CLJ => "Clojure",
-            FileType::GROOVY => "Groovy",
-            FileType::PL => "Perl",
-            FileType::PM => "Perl Module",
-            FileType::SH => "Shell",
-            FileType::BASH => "Bash",
-            FileType::ZSH => "Zsh",
-            FileType::PS1 => "PowerShell",
-            FileType::SQL => "SQL",
-            FileType::TOML => "Toml",
-            FileType::JSON => "JSON",
-            FileType::YAML => "YAML",
-            FileType::XML => "XML",
-            FileType::MD => "Markdown",
-            FileType::MDX => "MDX",
-            FileType::DOCKERFILE => "Dockerfile",
-            FileType::MAKEFILE => "Makefile",
-            FileType::Vue => "VueJS",
-            FileType::SVELTE => "Svelte",
-            FileType::ASTRO => "Astro",
-            FileType::Other => "Other",
-        };
-
-        write!(f, "{text}")
-    }
-}
-
-#[derive(Debug)]
-struct FileCount {
-    total_files: u32,
-    total_loc: u32,
-    blank_lines: u32,
-}
 
 fn count_lines(path: &Path) -> Result<(), LocError> {
     let mut counter: HashMap<FileType, FileCount> = HashMap::new();
