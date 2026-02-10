@@ -1,11 +1,13 @@
 use clap::Parser;
+use rayon::prelude::*;
 use std::{
     collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
+    sync::{Arc, Mutex},
 };
 
-use ignore::Walk;
+use ignore::WalkBuilder;
 use prettytable::{Table, row};
 
 use crate::types::{cli::Cli, error::LocError, file_count::FileCount, file_type::FileType};
@@ -22,9 +24,9 @@ pub fn run() -> Result<(), LocError> {
 }
 
 fn count_lines(path: &Path) -> Result<(), LocError> {
-    let mut counter: HashMap<FileType, FileCount> = HashMap::new();
+    let counter: Arc<Mutex<HashMap<FileType, FileCount>>> = Arc::new(Mutex::new(HashMap::new()));
     let mut files: Vec<PathBuf> = vec![];
-    for entry in Walk::new(path).flatten() {
+    for entry in WalkBuilder::new(path).build().flatten() {
         let entry_path = entry.into_path();
 
         if entry_path.is_file() {
@@ -33,7 +35,7 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
         // Probably show a warning here?
     }
 
-    for file in files {
+    files.into_par_iter().for_each(|file| {
         let file_name = file.file_name().unwrap_or_default();
         let file_name_normalized = file_name.to_string_lossy().to_ascii_lowercase();
         let mut file_type = FileType::Other;
@@ -108,6 +110,7 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
                 }
             }
             let line_count = text.lines().count() as u32;
+            let mut counter = counter.lock().expect("counter mutex poisoned");
             counter
                 .entry(file_type)
                 .and_modify(|e| {
@@ -121,7 +124,12 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
                     blank_lines,
                 });
         }
-    }
+    });
+
+    let counter = Arc::try_unwrap(counter)
+        .expect("counter still has references")
+        .into_inner()
+        .expect("counter mutex poisoned");
 
     let mut table = Table::new();
     table.add_row(row![
