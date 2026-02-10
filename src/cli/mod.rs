@@ -21,17 +21,14 @@ pub fn run() -> Result<(), LocError> {
     count_lines(&path)
 }
 
-
 fn count_lines(path: &Path) -> Result<(), LocError> {
     let mut counter: HashMap<FileType, FileCount> = HashMap::new();
     let mut files: Vec<PathBuf> = vec![];
-    for result in Walk::new(path) {
-        if let Result::Ok(entry) = result {
-            let entry_path = entry.into_path();
+    for entry in Walk::new(path).flatten() {
+        let entry_path = entry.into_path();
 
-            if entry_path.is_file() {
-                files.push(entry_path);
-            }
+        if entry_path.is_file() {
+            files.push(entry_path);
         }
         // Probably show a warning here?
     }
@@ -121,7 +118,7 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
                 .or_insert(FileCount {
                     total_files: 1,
                     total_loc: line_count,
-                    blank_lines: blank_lines,
+                    blank_lines,
                 });
         }
     }
