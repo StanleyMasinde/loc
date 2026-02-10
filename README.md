@@ -1,4 +1,5 @@
-# loc
+# LOC
+> LOC is short for lines of code.
 
 A fast command-line line counter written in Rust.
 
