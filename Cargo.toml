@@ -5,7 +5,12 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4.5.57", features = ["derive"] }
+criterion = { version = "0.8.2", features = ["html_reports"] }
 ignore = "0.4.25"
 prettytable = "0.10.0"
 rayon = "1.11.0"
 thiserror = "2.0.18"
+
+[[bench]]
+name = "loc"
+harness = false

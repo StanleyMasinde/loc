@@ -20,10 +20,48 @@ pub fn run() -> Result<(), LocError> {
         env::current_dir().map_err(|source| LocError::CurrentDirectory { source })?
     };
 
-    count_lines(&path)
+    let final_count = count_lines(&path)?;
+
+    let mut table = Table::new();
+    table.add_row(row![
+        "Language",
+        "Files",
+        "Blank lines",
+        "code",
+        "All lines"
+    ]);
+
+    let mut total_files = 0;
+    let mut total_blank = 0;
+    let mut total_code = 0;
+
+    for (file_type, file_count) in final_count {
+        let total = file_count.total_files;
+        let blank = file_count.blank_lines;
+        let loc = file_count.total_loc;
+        let code = loc - blank;
+
+        total_files += total;
+        total_blank += blank;
+        total_code += code;
+
+        table.add_row(row![file_type, total, blank, code, loc]);
+    }
+
+    table.add_row(row![
+        "Total",
+        total_files,
+        total_blank,
+        total_code,
+        total_files + total_blank + total_code
+    ]);
+
+    table.printstd();
+
+    Ok(())
 }
 
-fn count_lines(path: &Path) -> Result<(), LocError> {
+pub fn count_lines(path: &Path) -> Result<HashMap<FileType, FileCount>, LocError> {
     let counter: Arc<Mutex<HashMap<FileType, FileCount>>> = Arc::new(Mutex::new(HashMap::new()));
     let mut files: Vec<PathBuf> = vec![];
     for entry in WalkBuilder::new(path).build().flatten() {
@@ -131,41 +169,5 @@ fn count_lines(path: &Path) -> Result<(), LocError> {
         .into_inner()
         .expect("counter mutex poisoned");
 
-    let mut table = Table::new();
-    table.add_row(row![
-        "Language",
-        "Files",
-        "Blank lines",
-        "code",
-        "All lines"
-    ]);
-
-    let mut total_files = 0;
-    let mut total_blank = 0;
-    let mut total_code = 0;
-
-    for (file_type, file_count) in counter {
-        let total = file_count.total_files;
-        let blank = file_count.blank_lines;
-        let loc = file_count.total_loc;
-        let code = loc - blank;
-
-        total_files += total;
-        total_blank += blank;
-        total_code += code;
-
-        table.add_row(row![file_type, total, blank, code, loc]);
-    }
-
-    table.add_row(row![
-        "Total",
-        total_files,
-        total_blank,
-        total_code,
-        total_files + total_blank + total_code
-    ]);
-
-    table.printstd();
-
-    Ok(())
+    Ok(counter)
 }
