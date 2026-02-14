@@ -1,10 +1,10 @@
 use clap::Parser;
+use dashmap::DashMap;
 use rayon::prelude::*;
 use std::{
-    collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 
 use ignore::WalkBuilder;
@@ -61,8 +61,8 @@ pub fn run() -> Result<(), LocError> {
     Ok(())
 }
 
-pub fn count_lines(path: &Path) -> Result<HashMap<FileType, FileCount>, LocError> {
-    let counter: Arc<Mutex<HashMap<FileType, FileCount>>> = Arc::new(Mutex::new(HashMap::new()));
+pub fn count_lines(path: &Path) -> Result<DashMap<FileType, FileCount>, LocError> {
+    let counter: Arc<DashMap<FileType, FileCount>> = Arc::new(DashMap::new());
     let mut files: Vec<PathBuf> = vec![];
     for entry in WalkBuilder::new(path).build().flatten() {
         let entry_path = entry.into_path();
@@ -148,7 +148,7 @@ pub fn count_lines(path: &Path) -> Result<HashMap<FileType, FileCount>, LocError
                 }
             }
             let line_count = text.lines().count() as u32;
-            let mut counter = counter.lock().expect("counter mutex poisoned");
+
             counter
                 .entry(file_type)
                 .and_modify(|e| {
@@ -164,10 +164,5 @@ pub fn count_lines(path: &Path) -> Result<HashMap<FileType, FileCount>, LocError
         }
     });
 
-    let counter = Arc::try_unwrap(counter)
-        .expect("counter still has references")
-        .into_inner()
-        .expect("counter mutex poisoned");
-
-    Ok(counter)
+    Ok(Arc::try_unwrap(counter).unwrap())
 }
