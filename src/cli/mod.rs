@@ -53,7 +53,7 @@ pub fn run() -> Result<(), LocError> {
         total_files,
         total_blank,
         total_code,
-        total_files + total_blank + total_code
+        total_blank + total_code
     ]);
 
     table.printstd();
