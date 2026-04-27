@@ -6,9 +6,12 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
+use tabled::{
+    Table,
+    settings::{Height, Width, peaker::Priority},
+};
 
 use ignore::WalkBuilder;
-use prettytable::{Table, row};
 
 use crate::types::{cli::Cli, error::LocError, file_count::FileCount, file_type::FileType};
 
@@ -22,18 +25,19 @@ pub fn run() -> Result<(), LocError> {
 
     let final_count = count_lines(&path)?;
 
-    let mut table = Table::new();
-    table.add_row(row![
-        "Language",
-        "Files",
-        "Blank lines",
-        "code",
-        "All lines"
-    ]);
+    // builder.push_record(["Language", "Files", "Blank lines", "code", "All lines"]);
 
     let mut total_files = 0;
     let mut total_blank = 0;
     let mut total_code = 0;
+
+    let mut table_data: Vec<Vec<String>> = vec![vec![
+        "Language".into(),
+        "Files".into(),
+        "Blank lines".into(),
+        "code".into(),
+        "All lines".into(),
+    ]];
 
     for (file_type, file_count) in final_count {
         let total = file_count.total_files;
@@ -45,20 +49,43 @@ pub fn run() -> Result<(), LocError> {
         total_blank += blank;
         total_code += code;
 
-        table.add_row(row![file_type, total, blank, code, loc]);
+        table_data.push(vec![
+            file_type.to_string(),
+            total_files.to_string(),
+            total_blank.to_string(),
+            total_code.to_string(),
+            loc.to_string(),
+        ]);
     }
 
-    table.add_row(row![
-        "Total",
-        total_files,
-        total_blank,
-        total_code,
-        total_blank + total_code
+    let total_loc = total_blank + total_code;
+
+    table_data.push(vec![
+        "Total".into(),
+        total_files.to_string(),
+        total_blank.to_string(),
+        total_code.to_string(),
+        total_loc.to_string(),
     ]);
 
-    table.printstd();
+    let mut table = Table::from_iter(table_data);
+    let (width, height) = get_terminal_size();
+    table
+        .with(Width::wrap(width).priority(Priority::right()))
+        .with(Width::increase(width))
+        .with(Height::limit(height))
+        .with(Height::increase(height));
+
+    println!("{table}");
 
     Ok(())
+}
+
+fn get_terminal_size() -> (usize, usize) {
+    let (terminal_size::Width(width), terminal_size::Height(height)) =
+        terminal_size::terminal_size().expect("Failed to get the terminal size");
+
+    (width as usize, height as usize)
 }
 
 pub fn count_lines(path: &Path) -> Result<DashMap<FileType, FileCount>, LocError> {

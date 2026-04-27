@@ -8,8 +8,9 @@ clap = { version = "4.5.57", features = ["derive"] }
 criterion = { version = "0.8.2", features = ["html_reports"] }
 dashmap = "6.1.0"
 ignore = "0.4.25"
-prettytable = "0.10.0"
 rayon = "1.11.0"
+tabled = "0.20.0"
+terminal_size = "0.4.4"
 thiserror = "2.0.18"
 
 [[bench]]
